@@ -276,3 +276,6 @@ if __name__ == "__main__":
             )
             if not args.ignore_expired:
                 sys.exit(1)
+        except:
+            print("{}exception, skipping {}".format(CLEAR, item))
+            continue
