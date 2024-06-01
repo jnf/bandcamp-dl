@@ -114,17 +114,18 @@ def bc_download(url, identity, format):
     return data["download_url"]
 
 
-def download_file(item, url):
-    logging.info("download {}".format(url))
+def download_file(item, url, path):
+    logging.info("download {} to {}".format(url, path))
     with urllib.request.urlopen(build_request(url)) as f:
         for x in f.headers["content-disposition"].split(";"):
             x = x.strip()
             if x.startswith("filename*=UTF-8''"):
                 filename = urllib.parse.unquote(x.split("''", 1)[1])
         split = filename.rsplit(".", 1)
-        filename = "{split[0]} ({item.id}).{split[1]}".format(split=split, item=item)
+        filename = "{path}/{split[0]} ({item.id}).{split[1]}".format(split=split, item=item, path=path)
         size = int(f.headers["content-length"])
         try:
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
             with open(filename, "wb") as t:
                 at = 0
                 while True:
@@ -183,8 +184,8 @@ def items(data):
         )
 
 
-def already_downloaded(item):
-    g = glob.glob("*({})*".format(item.id))
+def already_downloaded(item, path):
+    g = glob.glob("{}/*({})*".format(path, item.id))
     if g:
         # redownload for pre-orders / albums with new tracks: if this is a zip,
         # get the track count and compare against the item's streamable tracks
@@ -266,11 +267,11 @@ if __name__ == "__main__":
         sys.exit(1)
 
     for item in collection(identity):
-        if already_downloaded(item):
+        if already_downloaded(item, args.path):
             continue
         progress(item)
         try:
-            download_file(item, bc_download(item.download_url, identity, args.format))
+            download_file(item, bc_download(item.download_url, identity, args.format), args.path)
         except ExpiredDownloadError:
             print(
                 "{} - {}: download expired. See https://get.bandcamp.help/hc/en-us/articles/360046095574".format(
@@ -280,5 +281,4 @@ if __name__ == "__main__":
             if not args.ignore_expired:
                 sys.exit(1)
         except:
-            print("{}exception, skipping {}".format(CLEAR, item))
-            continue
+            print("{}exception, skipping {} with args {}".format(CLEAR, item, args))
