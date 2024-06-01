@@ -234,6 +234,9 @@ def progress(item, skip=None, at=None, size=None):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
+        "--path", help="Relative path to store downloads (default: %(default)s)", default="./collection"
+    )
+    parser.add_argument(
         "--format", help="Format to download (default: %(default)s)", default="flac"
     )
     parser.add_argument(
